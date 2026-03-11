@@ -1,7 +1,6 @@
 function injectHelloWorldButton() {
 
     const platformButton = document.querySelector("#nav-uiconfigs");
-
     if (!platformButton) return;
 
     if (document.querySelector("#nav-helloworld")) return;
@@ -11,20 +10,35 @@ function injectHelloWorldButton() {
     newButton.id = "nav-helloworld";
 
     const link = newButton.querySelector("a");
+    const text = newButton.querySelector(".nav-text");
+
+    text.innerText = "Custom Button";
     link.href = "#";
 
-    const text = newButton.querySelector(".nav-text");
-    text.innerText = "Hello World";
-
     link.onclick = function (e) {
+
         e.preventDefault();
 
         alert("Hello World");
 
+        activateButton(newButton);
+
         openIframePage();
     };
 
-    platformButton.parentNode.insertBefore(newButton, platformButton.nextSibling);
+    platformButton.after(newButton);
+}
+
+function activateButton(button) {
+
+    document.querySelectorAll("#nav-buttons li")
+        .forEach(li => li.classList.remove("nav-link-current"));
+
+    button.classList.add("nav-link-current");
+
+    const header = document.querySelector(".page-title, .header-title");
+
+    if (header) header.innerText = "Custom Button";
 }
 
 function openIframePage() {
@@ -37,22 +51,21 @@ function openIframePage() {
         container.id = "hello-world-container";
 
         container.style.width = "100%";
-        container.style.height = "calc(100vh - 140px)";
-        container.style.marginTop = "20px";
+        container.style.height = "700px";
 
         const iframe = document.createElement("iframe");
 
-        iframe.src = "https://www.google.com.pk";
+        iframe.src = "https://example.com";
         iframe.style.width = "100%";
         iframe.style.height = "100%";
         iframe.style.border = "none";
 
         container.appendChild(iframe);
 
-        const mainContent = document.querySelector("#content") || document.body;
+        const content = document.querySelector("#content") || document.body;
 
-        mainContent.innerHTML = "";
-        mainContent.appendChild(container);
+        content.innerHTML = "";
+        content.appendChild(container);
     }
 }
 
