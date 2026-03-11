@@ -1,28 +1,30 @@
-function addCustomPortalButton() {
+function injectHelloWorldButton() {
 
-    const platformTile = [...document.querySelectorAll("div")]
-        .find(el => el.innerText.trim() === "Platform Settings");
+    const platformButton = document.querySelector("#nav-uiconfigs");
 
-    if (!platformTile) {
-        console.log("Platform Settings tile not found");
+    if (!platformButton) {
+        console.log("Platform Settings button not found");
         return;
     }
 
-    const tile = platformTile.closest("li, div");
+    if (document.querySelector("#nav-helloworld")) return;
 
-    if (!tile) return;
+    const newButton = platformButton.cloneNode(true);
 
-    const newTile = tile.cloneNode(true);
+    newButton.id = "nav-helloworld";
 
-    newTile.innerHTML = newTile.innerHTML
-        .replace("Platform Settings", "Hello World")
-        .replace("fa-wrench", "fa-star");
+    const link = newButton.querySelector("a");
+    link.href = "#";
 
-    newTile.onclick = function () {
+    const text = newButton.querySelector(".nav-text");
+    text.innerText = "Hello World";
+
+    link.onclick = function (e) {
+        e.preventDefault();
         alert("Hello World!");
     };
 
-    tile.parentNode.insertBefore(newTile, tile.nextSibling);
+    platformButton.parentNode.insertBefore(newButton, platformButton.nextSibling);
 }
 
-setTimeout(addCustomPortalButton, 3000);
+setTimeout(injectHelloWorldButton, 2000);
