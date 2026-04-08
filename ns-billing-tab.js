@@ -29,8 +29,7 @@ function shouldShowBillingButton() {
     }
 
     const scope = (payload.user_scope || '').toLowerCase().trim();
-    const allowed = ['abc', 'def', 'ghi'];
-
+    const allowed = ['super user', 'superuser', 'reseller'];
     const isAllowed = allowed.some(a => scope.includes(a));
 
     console.log(`User scope: "${payload.user_scope}" → Billing button ${isAllowed ? 'ENABLED' : 'BLOCKED'}`);
