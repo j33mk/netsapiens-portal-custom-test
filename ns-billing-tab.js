@@ -29,7 +29,7 @@ function shouldShowBillingButton() {
     }
 
     const scope = (payload.user_scope || '').toLowerCase().trim();
-    const allowed = ['super user', 'superuser', 'reseller'];
+    const allowed = ['abc', 'def', 'ghi'];
 
     const isAllowed = allowed.some(a => scope.includes(a));
 
