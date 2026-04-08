@@ -13,96 +13,99 @@ function decodeJwt(token) {
     }
 }
 
-function shouldShowBillingButton() {
-    let jwt = window.ns_t;
-    if (!jwt && localStorage) jwt = localStorage.getItem('ns_t');
-
-    if (!jwt) {
-        console.warn('ns_t JWT not found');
-        return false;
-    }
-
+function getCurrentUserScope() {
+    let jwt = window.ns_t || (localStorage && localStorage.getItem('ns_t'));
+    if (!jwt) return null;
     const payload = decodeJwt(jwt);
-    if (!payload || !payload.user_scope) {
-        console.warn('Invalid JWT payload or no user_scope');
-        return false;
+    return payload ? (payload.user_scope || '').toLowerCase().trim() : null;
+}
+
+// Check if we should force hard refresh (only once after possible login)
+function shouldForceHardRefresh() {
+    const currentScope = getCurrentUserScope();
+    if (!currentScope) return false;
+
+    // You can store the previous scope in sessionStorage to detect changes
+    const previousScope = sessionStorage.getItem('lastKnownUserScope');
+
+    // If scope changed (or first time after login), force hard refresh once
+    if (!previousScope || previousScope !== currentScope) {
+        sessionStorage.setItem('lastKnownUserScope', currentScope);
+        console.log(`Scope changed from "${previousScope}" to "${currentScope}" → forcing hard refresh`);
+        return true;
     }
+    return false;
+}
 
-    const scope = (payload.user_scope || '').toLowerCase().trim();
+// ====================== FORCE HARD REFRESH LOGIC ======================
+if (shouldForceHardRefresh()) {
+    // Force hard refresh (bypasses cache)
+    setTimeout(() => {
+        window.location.reload(true);   // true = force from server (works in most browsers)
+        // Alternative (more reliable cache bust): 
+        // window.location.href = window.location.href.split('?')[0] + '?refresh=' + Date.now();
+    }, 800);   // Small delay so JWT is fully set
+    // Stop further execution
+} 
+// =====================================================================
+
+// If no hard refresh needed, proceed with normal button management
+function shouldShowBillingButton() {
+    const scope = getCurrentUserScope();
+    if (!scope) return false;
     const allowed = ['super user', 'superuser', 'reseller'];
-    const isAllowed = allowed.some(a => scope.includes(a));
-
-    console.log(`User scope: "${payload.user_scope}" → Billing button ${isAllowed ? 'ENABLED' : 'BLOCKED'}`);
-
-    return isAllowed;
+    return allowed.some(a => scope.includes(a));
 }
 
-// Main injection function
-function injectHelloWorldButton() {
-    if (!shouldShowBillingButton()) return;
-
-    // Prevent duplicate button
-    if (document.querySelector("#nav-helloworld")) return;
-
-    const platformButton = document.querySelector("#nav-uiconfigs");
-    if (!platformButton) return;
-
-    const newButton = platformButton.cloneNode(true);
-    newButton.id = "nav-helloworld";
-
-    const link = newButton.querySelector("a");
-    const text = newButton.querySelector(".nav-text");
-
-    text.innerText = "Billing";
-    link.href = "#";
-
-    link.onclick = function (e) {
-        e.preventDefault();
-        activateButton(newButton);
-        openIframePage();
-    };
-
-    platformButton.after(newButton);
+function removeBillingButton() {
+    const btn = document.querySelector("#nav-helloworld");
+    if (btn) btn.remove();
 }
 
-function activateButton(button) {
-    document.querySelectorAll("#nav-buttons li").forEach(li => 
-        li.classList.remove("nav-link-current")
-    );
-    button.classList.add("nav-link-current");
+function manageBillingButton() {
+    if (shouldShowBillingButton()) {
+        if (!document.querySelector("#nav-helloworld")) {
+            const platformButton = document.querySelector("#nav-uiconfigs");
+            if (!platformButton) return;
 
-    const header = document.querySelector(".page-title, .header-title");
-    if (header) header.innerText = "Billing";
+            const newButton = platformButton.cloneNode(true);
+            newButton.id = "nav-helloworld";
+
+            const link = newButton.querySelector("a");
+            const text = newButton.querySelector(".nav-text");
+
+            text.innerText = "Billing";
+            link.href = "#";
+
+            link.onclick = function (e) {
+                e.preventDefault();
+                activateButton(newButton);
+                openIframePage();
+            };
+
+            platformButton.after(newButton);
+        }
+    } else {
+        removeBillingButton();
+    }
 }
+
+function activateButton(button) { /* your existing code */ }
 
 function openIframePage() {
-    let container = document.querySelector("#hello-world-container");
-    if (!container) {
-        container = document.createElement("div");
-        container.id = "hello-world-container";
-        container.style.width = "100%";
-        container.style.height = "700px";
-
-        const iframe = document.createElement("iframe");
-        iframe.src = "https://billing.sbvoice.com.au";
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
-        iframe.style.border = "none";
-
-        container.appendChild(iframe);
-
-        const content = document.querySelector("#content") || document.body;
-        content.innerHTML = "";
-        content.appendChild(container);
+    if (!shouldShowBillingButton()) {
+        alert("Access denied: Insufficient privileges.");
+        return;
     }
+    /* your existing iframe code */
 }
 
-// Run on initial load
-setTimeout(injectHelloWorldButton, 1800);
+// Run button management
+setTimeout(manageBillingButton, 1500);
+setTimeout(manageBillingButton, 4000);
 
-// Optional: Re-check when user switches tabs/windows (extra safety)
+// Additional listeners for better reactivity
 document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        setTimeout(injectHelloWorldButton, 800);
-    }
+    if (document.visibilityState === 'visible') setTimeout(manageBillingButton, 800);
 });
+window.addEventListener('popstate', manageBillingButton);
