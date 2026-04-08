@@ -53,7 +53,8 @@ if (shouldForceHardRefresh()) {
 function shouldShowBillingButton() {
     const scope = getCurrentUserScope();
     if (!scope) return false;
-    const allowed = ['super user', 'superuser', 'reseller'];
+    const allowed = ['aa', 'bb', 'cc'];
+    // const allowed = ['super user', 'superuser', 'reseller'];
     return allowed.some(a => scope.includes(a));
 }
 
